@@ -1,0 +1,21 @@
+[Unit]
+Description=Harmonic Series Web API
+After=network.target
+
+[Service]
+Type=simple
+User=WEB_USER
+WorkingDirectory=HARMONIC_ROOT/web/api
+Environment=HARMONIC_BIN=HARMONIC_ROOT/harmonic_series
+Environment=CORS_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
+ExecStart=HARMONIC_ROOT/web/api/.venv/bin/uvicorn main:app --host UVICORN_HOST --port UVICORN_PORT
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+
+# Copy and edit locally (gitignored):
+#   cp systemd/harmonic-web.service.example systemd/harmonic-web.local.service
+# Replace WEB_USER, HARMONIC_ROOT, UVICORN_HOST (e.g. 127.0.0.1), UVICORN_PORT (e.g. 8001)
+#   sudo cp systemd/harmonic-web.local.service /etc/systemd/system/harmonic-web.service
+#   sudo systemctl daemon-reload && sudo systemctl enable --now harmonic-web
