@@ -34,28 +34,21 @@ So this repository is:
 | `HarmonicSeries/harmonic_cuda.cu` | CUDA backend (one thread per chunk) |
 | `HarmonicSeries/harmonic_estimator.cpp` | Euler–Maclaurin `n` for target sum |
 | `HarmonicSeries/main.cpp` | CLI and backend dispatch |
-| `HarmonicSeries/harmonic_distributed.cpp` | Multi-node CUDA (CLI + dashboard rank launcher) |
+| `HarmonicSeries/harmonic_distributed.cpp` | Multi-node CUDA (CLI; web lab on `web` branch) |
 
 See also:
 
 - `docs/project-review-and-sum40-plan.md` — review and roadmap
 - `docs/gpu-cuda.md` — CUDA design and archived experiment notes
-- `web/README.md` — dark web dashboard (homepage + lab console)
 
 ## Web dashboard
 
-Local-first dark UI for running benchmarks, live monitoring, GPU/cluster cost estimates, and a project explainer homepage.
+Homepage, lab UI, and production static site live on the **[`web` branch](https://github.com/ivanmiskic/HarmonicSeries/tree/web)**.
 
-```bash
-make CUDA=1
-cd web/api && python -m venv .venv && .venv/bin/pip install -r requirements.txt
-HARMONIC_BIN=../../harmonic_series .venv/bin/uvicorn main:app --port 8001 &
-cd .. && cp .env.example .env.local && npm install && npm run dev
-```
+- **Live demo:** [offshore.studio/harmonic-series/](https://offshore.studio/harmonic-series/)
+- **Setup & deploy:** [web/README.md](https://github.com/ivanmiskic/HarmonicSeries/blob/web/web/README.md) on the `web` branch
 
-Open http://localhost:3000 (homepage) and http://localhost:3000/dashboard (lab).
-
-New CLI flags for API integration:
+JSON CLI flags used by the lab API:
 
 ```bash
 ./harmonic_series --format json --backend estimate --target 40
