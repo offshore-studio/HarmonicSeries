@@ -4,13 +4,22 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import clsx from "clsx";
 
-const SECTION_IDS = ["harmonic", "project", "performance", "calculator"] as const;
+const SECTION_IDS = [
+  "harmonic",
+  "project",
+  "implementation",
+  "scale",
+  "performance",
+  "calculator",
+  "run-locally",
+] as const;
 type SectionId = (typeof SECTION_IDS)[number];
 
 const sectionLinks: { id: SectionId; href: string; label: string }[] = [
   { id: "project", href: "/#project", label: "Project" },
-  { id: "performance", href: "/#performance", label: "Performance" },
-  { id: "calculator", href: "/#calculator", label: "Calculator" },
+  { id: "implementation", href: "/#implementation", label: "Code" },
+  { id: "performance", href: "/#performance", label: "Perf" },
+  { id: "calculator", href: "/#calculator", label: "Calc" },
 ];
 
 function activeFromScroll(): SectionId {
@@ -48,10 +57,11 @@ export function Nav() {
     );
 
   return (
-    <nav className="fixed top-6 left-1/2 -translate-x-1/2 z-40 w-max max-w-[95vw]">
+    <nav aria-label="Primary" className="fixed top-6 left-1/2 -translate-x-1/2 z-40 w-max max-w-[95vw]">
       <div className="flex items-center gap-1 rounded-full px-2 py-2 ring-1 ring-white/10 bg-base/80 backdrop-blur-xl">
         <Link
           href="/#harmonic"
+          aria-current={onHome && activeSection === "harmonic" ? "page" : undefined}
           className={clsx(
             "px-3 py-1.5 text-sm font-semibold rounded-full transition-colors",
             onHome && activeSection === "harmonic" ? "text-accent bg-white/10" : "text-accent hover:bg-white/5",
@@ -60,11 +70,20 @@ export function Nav() {
           Harmonic
         </Link>
         {sectionLinks.map((l) => (
-          <Link key={l.id} href={l.href} className={linkClass(onHome && activeSection === l.id)}>
+          <Link
+            key={l.id}
+            href={l.href}
+            aria-current={onHome && activeSection === l.id ? "page" : undefined}
+            className={linkClass(onHome && activeSection === l.id)}
+          >
             {l.label}
           </Link>
         ))}
-        <Link href="/dashboard" className={linkClass(path === "/dashboard")}>
+        <Link
+          href="/dashboard"
+          aria-current={path === "/dashboard" ? "page" : undefined}
+          className={linkClass(path === "/dashboard")}
+        >
           Lab
         </Link>
       </div>

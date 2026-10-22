@@ -3,6 +3,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { SectionReveal, RevealItem } from "@/components/ui/SectionReveal";
+import { GITHUB_REPO_URL } from "@/lib/github";
 
 const tabs = [
   {
@@ -23,7 +24,7 @@ const tabs = [
   {
     id: "distributed",
     label: "Distributed",
-    desc: "Dynamic work-queue scheduling across multiple CUDA hosts (CLI on each machine). The Lab can launch rank 0 on this host; peer GPUs run matching commands from docs/distributed-two-machines.md.",
+    desc: "Dynamic work-queue scheduling across two CUDA hosts (CLI on each machine; trusted LAN). The Lab can launch rank 0 on this host; peer GPUs run matching commands — see distributed-two-machines.md on GitHub.",
   },
 ];
 
@@ -31,7 +32,7 @@ export function Implementations() {
   const [active, setActive] = useState("cuda");
   const tab = tabs.find((t) => t.id === active)!;
   return (
-    <section className="px-6 py-24 max-w-6xl mx-auto">
+    <section id="implementation" className="px-6 py-24 max-w-6xl mx-auto">
       <SectionReveal>
         <RevealItem>
           <h2 className="text-3xl font-bold mb-2">Implementation</h2>
@@ -55,6 +56,18 @@ export function Implementations() {
               <motion.div key={active} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}>
                 <h3 className="text-xl font-semibold text-accent-indigo mb-3">{tab.label}</h3>
                 <p className="text-muted leading-relaxed">{tab.desc}</p>
+                {active === "distributed" && (
+                  <p className="mt-3 text-sm">
+                    <a
+                      href={`${GITHUB_REPO_URL}/blob/master/docs/distributed-two-machines.md`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-accent hover:underline"
+                    >
+                      Read distributed-two-machines.md →
+                    </a>
+                  </p>
+                )}
               </motion.div>
             </AnimatePresence>
           </GlassCard>

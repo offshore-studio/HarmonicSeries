@@ -4,7 +4,6 @@ import { GlassCard } from "@/components/ui/GlassCard";
 import { PillButton } from "@/components/ui/PillButton";
 import { TunableField } from "@/components/dashboard/TunableField";
 import { ApiStatusBanner, apiUnavailableDetail } from "@/components/ui/ApiStatusBanner";
-import { PresentationBanner } from "@/components/ui/PresentationBanner";
 import { GITHUB_REPO_URL } from "@/lib/github";
 import { isLabLive } from "@/lib/lab-mode";
 import {
@@ -198,7 +197,9 @@ export function RunLauncher({ onStarted }: Props) {
 
       {!isLabLive && (
         <p className="text-accent/90 text-xs mb-4 rounded-lg bg-accent/10 px-3 py-2 ring-1 ring-accent/20">
-          Preview only — configure runs here, but execution is disabled in production.
+          Preview only — Start run is disabled. Clone the <code className="text-accent">web</code> branch
+          and set <code className="text-accent">NEXT_PUBLIC_LAB_ENABLED=true</code> to execute locally
+          (see homepage &quot;Clone &amp; run locally&quot;).
         </p>
       )}
 

@@ -448,6 +448,14 @@ bool run_distributed_dynamic(const Config &cfg, RunStats &stats)
 {
     const int rank = cfg.dist_rank;
     const int nodes = cfg.dist_nodes;
+    // Work-queue path currently accepts a single remote worker (listen backlog 1).
+    if (nodes != 2)
+    {
+        std::cerr << "Dynamic distributed mode currently supports exactly 2 nodes "
+                     "(leader + one worker). Use --dist-schedule static for N>2, "
+                     "or wait for multi-worker queue support.\n";
+        return false;
+    }
     const uint64_t work_unit = resolve_work_unit(cfg);
     const uint64_t total_units = total_work_units(cfg.global_n, work_unit);
     const int work_port = cfg.sync_port + 1;
@@ -541,8 +549,10 @@ bool run_distributed_dynamic(const Config &cfg, RunStats &stats)
     NodeResult nr;
     nr.rank = rank;
     nr.nodes = nodes;
-    nr.range_start = 1;
-    nr.range_end = cfg.global_n;
+    // Dynamic schedule does not own a contiguous static range; leave range as 0
+    // so merge validates via terms_processed rather than false [1..N] coverage.
+    nr.range_start = 0;
+    nr.range_end = 0;
     nr.terms_processed = terms_done;
     nr.work_units_done = units_done;
     nr.partial_sum = acc_sum;
@@ -586,6 +596,7 @@ IndexRange partition_range(int rank, int nodes, uint64_t global_n)
 
 bool distributed_sync_barrier(int rank, int nodes, const std::string &leader_host, int port)
 {
+    // Lab-only: plaintext TCP with no authentication. Use on a trusted LAN.
     if (nodes <= 1)
         return true;
 
@@ -786,6 +797,50 @@ bool merge_node_results(const std::vector<std::string> &paths, double &out_total
                   << " / " << nr.gpu_name << "  (" << nr.elapsed_sec << " s)\n";
     }
 
+    if (nodes.empty())
+    {
+        std::cerr << "merge: no node results\n";
+        return false;
+    }
+
+    const int expected_nodes = nodes.front().nodes;
+    if (expected_nodes <= 0 || static_cast<int>(nodes.size()) != expected_nodes)
+    {
+        std::cerr << "merge: expected " << expected_nodes << " node file(s), got "
+                  << nodes.size() << "\n";
+        return false;
+    }
+
+    std::vector<bool> seen(static_cast<size_t>(expected_nodes), false);
+    bool all_static = true;
+    bool all_dynamic = true;
+    uint64_t global_n_hint = 0;
+    for (const auto &nr : nodes)
+    {
+        if (nr.nodes != expected_nodes)
+        {
+            std::cerr << "merge: inconsistent nodes field across files\n";
+            return false;
+        }
+        if (nr.rank < 0 || nr.rank >= expected_nodes)
+        {
+            std::cerr << "merge: invalid rank " << nr.rank << "\n";
+            return false;
+        }
+        if (seen[static_cast<size_t>(nr.rank)])
+        {
+            std::cerr << "merge: duplicate rank " << nr.rank << "\n";
+            return false;
+        }
+        seen[static_cast<size_t>(nr.rank)] = true;
+        if (nr.schedule == "dynamic")
+            all_static = false;
+        else
+            all_dynamic = false;
+        if (nr.range_end > global_n_hint)
+            global_n_hint = nr.range_end;
+    }
+
     double sum = 0.0;
     double comp = 0.0;
     out_terms = 0;
@@ -795,6 +850,23 @@ bool merge_node_results(const std::vector<std::string> &paths, double &out_total
         out_terms += nr.terms_processed;
     }
     out_total = sum;
+
+    if (all_static && global_n_hint > 0 && out_terms != global_n_hint)
+    {
+        std::cerr << "merge: static partition terms " << out_terms
+                  << " != expected global-n " << global_n_hint << "\n";
+        return false;
+    }
+    if (all_dynamic && global_n_hint == 0)
+    {
+        // Dynamic results leave range empty; terms should be > 0 when work ran.
+        if (out_terms == 0)
+        {
+            std::cerr << "merge: dynamic results reported zero terms\n";
+            return false;
+        }
+    }
+
     return true;
 }
 

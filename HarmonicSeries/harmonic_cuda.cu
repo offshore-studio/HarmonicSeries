@@ -98,7 +98,7 @@ void check_cuda(cudaError_t err, const char *what)
     }
 }
 
-double merge_chunks_host(const std::vector<double> &chunks, SumMode mode)
+bool merge_chunks_host(const std::vector<double> &chunks, SumMode mode, double &out_sum)
 {
     if (mode == SumMode::Fast || mode == SumMode::Turbo)
     {
@@ -106,7 +106,8 @@ double merge_chunks_host(const std::vector<double> &chunks, SumMode mode)
         double comp = 0.0;
         for (double v : chunks)
             kahan_add(sum, comp, v);
-        return sum;
+        out_sum = sum;
+        return true;
     }
 
     PartialState merged;
@@ -114,9 +115,13 @@ double merge_chunks_host(const std::vector<double> &chunks, SumMode mode)
     for (double v : chunks)
     {
         if (!partial_add_term(merged, v))
-            return 0.0;
+        {
+            std::cerr << "merge_chunks_host: partial buffer overflow while combining results\n";
+            return false;
+        }
     }
-    return kahan_sum(merged.cur, merged.cur_count);
+    out_sum = kahan_sum(merged.cur, merged.cur_count);
+    return true;
 }
 
 double device_reduce_chunks(CudaSession &session, int active_chunks)
@@ -228,7 +233,8 @@ bool run_cuda_chunk_range_session(
         check_cuda(cudaMemcpy(h_totals.data(), session.d_totals, static_cast<size_t>(num_chunks) * sizeof(double),
                         cudaMemcpyDeviceToHost),
             "memcpy totals");
-        stats.final_sum = merge_chunks_host(h_totals, mode);
+        if (!merge_chunks_host(h_totals, mode, stats.final_sum))
+            return false;
     }
 
     stats.terms_processed = terms;

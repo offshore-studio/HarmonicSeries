@@ -390,5 +390,8 @@ inline uint64_t resolve_global_end(const Config &cfg)
         return cfg.global_n;
     const size_t workers = resolve_worker_count(cfg);
     const uint64_t chunk_size = resolve_chunk_size(cfg);
-    return static_cast<uint64_t>(workers) * chunk_size;
+    uint64_t end = 0;
+    if (harmonic::mul_overflow_u64(static_cast<uint64_t>(workers), chunk_size, end))
+        return 0;
+    return end;
 }
