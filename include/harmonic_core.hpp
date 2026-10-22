@@ -14,6 +14,7 @@ constexpr int MAX_PARTIALS = 64;
 constexpr uint64_t TAIL_KAHAN_THRESHOLD = 1000000ULL;
 constexpr double TARGET_N_SUM_40 = 1.32159290357566703e17;
 constexpr int KAHAN_UNROLL = 8;
+constexpr uint64_t U64_MAX = ~static_cast<uint64_t>(0);
 
 enum class SumMode : int {
     Accurate = 0,
@@ -36,9 +37,24 @@ struct ChunkRange {
     uint64_t end;
 };
 
+inline HARMONIC_HD bool mul_overflow_u64(uint64_t a, uint64_t b, uint64_t &out)
+{
+    if (a == 0 || b == 0)
+    {
+        out = 0;
+        return false;
+    }
+    if (a > U64_MAX / b)
+        return true;
+    out = a * b;
+    return false;
+}
+
 inline HARMONIC_HD ChunkRange chunk_range(uint64_t chunk_index_1based, uint64_t chunk_size)
 {
-    const uint64_t end = chunk_index_1based * chunk_size;
+    uint64_t end = 0;
+    if (mul_overflow_u64(chunk_index_1based, chunk_size, end))
+        return {0, 0};
     const uint64_t start = end - chunk_size + 1;
     return {start, end};
 }

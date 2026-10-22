@@ -27,6 +27,7 @@ std::vector<double> g_chunk_totals;
 std::atomic<bool> g_workers_done{false};
 std::atomic<uint64_t> g_terms_done{0};
 std::atomic<size_t> g_jobs_completed{0};
+std::atomic<bool> g_worker_failed{false};
 time_t g_start_time = 0;
 bool g_quiet = false;
 bool g_progress_json = false;
@@ -35,11 +36,19 @@ SumMode g_sum_mode = SumMode::Adaptive;
 
 void worker_range(const RangeJob &job)
 {
+    if (job.start == 0 || job.end == 0 || job.start > job.end)
+    {
+        std::cerr << "Invalid range for job " << job.job_index << "\n";
+        g_worker_failed.store(true, std::memory_order_relaxed);
+        return;
+    }
+
     double total = 0.0;
     if (!sum_chunk_range(job.start, job.end, g_sum_mode, total))
     {
         std::cerr << "Range [" << job.start << ".." << job.end << "] overflowed partial buffer (max "
                   << MAX_PARTIALS << ")\n";
+        g_worker_failed.store(true, std::memory_order_relaxed);
         return;
     }
 
@@ -54,10 +63,11 @@ void progress_loop()
 {
     while (!g_workers_done.load())
     {
+        // Sum all written chunk totals (unfinished slots remain 0). Do not assume
+        // jobs complete in index order.
         double sum = 0.0;
-        const size_t completed = g_jobs_completed.load(std::memory_order_relaxed);
-        for (size_t i = 0; i < completed && i < g_chunk_totals.size(); ++i)
-            sum += g_chunk_totals[i];
+        for (double v : g_chunk_totals)
+            sum += v;
 
         const double elapsed = difftime(time(0), g_start_time);
         const uint64_t terms_done = g_terms_done.load(std::memory_order_relaxed);
@@ -73,7 +83,7 @@ void progress_loop()
     }
 }
 
-double merge_chunks(const std::vector<double> &chunks, SumMode mode)
+bool merge_chunks(const std::vector<double> &chunks, SumMode mode, double &out_sum)
 {
     if (mode == SumMode::Fast || mode == SumMode::Turbo)
     {
@@ -81,7 +91,8 @@ double merge_chunks(const std::vector<double> &chunks, SumMode mode)
         double comp = 0.0;
         for (double v : chunks)
             kahan_add(sum, comp, v);
-        return sum;
+        out_sum = sum;
+        return true;
     }
 
     PartialState merged;
@@ -89,9 +100,13 @@ double merge_chunks(const std::vector<double> &chunks, SumMode mode)
     for (double v : chunks)
     {
         if (!partial_add_term(merged, v))
-            return 0.0;
+        {
+            std::cerr << "merge_chunks: partial buffer overflow while combining results\n";
+            return false;
+        }
     }
-    return kahan_sum(merged.cur, merged.cur_count);
+    out_sum = kahan_sum(merged.cur, merged.cur_count);
+    return true;
 }
 
 std::vector<RangeJob> build_cpu_jobs(const Config &cfg, uint64_t range_end)
@@ -124,6 +139,8 @@ std::vector<RangeJob> build_cpu_jobs(const Config &cfg, uint64_t range_end)
     for (size_t i = 0; i < workers; ++i)
     {
         const auto range = chunk_range(i + 1, chunk_size);
+        if (range.start == 0 || range.end == 0)
+            break;
         if (range.start > range_end)
             break;
         const uint64_t end = range.end < range_end ? range.end : range_end;
@@ -137,6 +154,11 @@ std::vector<RangeJob> build_cpu_jobs(const Config &cfg, uint64_t range_end)
 bool run_cpu(const Config &cfg, RunStats &stats)
 {
     const uint64_t range_end = resolve_global_end(cfg);
+    if (range_end == 0)
+    {
+        std::cerr << "Invalid global N / workers × chunk_size (overflow or zero).\n";
+        return false;
+    }
     const auto jobs = build_cpu_jobs(cfg, range_end);
     if (jobs.empty())
     {
@@ -152,6 +174,7 @@ bool run_cpu(const Config &cfg, RunStats &stats)
     g_workers_done.store(false);
     g_terms_done.store(0);
     g_jobs_completed.store(0);
+    g_worker_failed.store(false);
     g_start_time = time(0);
 
     const auto t0 = std::chrono::steady_clock::now();
@@ -179,9 +202,16 @@ bool run_cpu(const Config &cfg, RunStats &stats)
         progress_thread.join();
 
     const auto t1 = std::chrono::steady_clock::now();
+    if (g_worker_failed.load(std::memory_order_relaxed))
+    {
+        std::cerr << "CPU run failed: one or more chunks reported an error.\n";
+        return false;
+    }
+
     stats.elapsed_sec = std::chrono::duration<double>(t1 - t0).count();
     stats.terms_processed = range_end;
-    stats.final_sum = merge_chunks(g_chunk_totals, g_sum_mode);
+    if (!merge_chunks(g_chunk_totals, g_sum_mode, stats.final_sum))
+        return false;
 
     if (!is_json_output(cfg))
     {

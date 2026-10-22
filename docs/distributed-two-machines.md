@@ -2,6 +2,10 @@
 
 Each machine sums **disjoint index ranges** of the harmonic series. A TCP barrier synchronizes the start. Partial sums merge with Kahan addition.
 
+**Trusted LAN only.** Sync and work-queue TCP have no authentication. Do not expose these ports to the public internet.
+
+**Dynamic schedule (`--dist-schedule dynamic`) supports exactly two nodes** (leader + one worker). For more ranks, use `--dist-schedule static` (disjoint partitions; wall time limited by the slowest GPU).
+
 ## Load balancing (important)
 
 **Default: `--dist-schedule dynamic`**

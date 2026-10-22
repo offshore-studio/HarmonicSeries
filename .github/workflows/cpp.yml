@@ -1,0 +1,31 @@
+name: C++ CPU
+
+on:
+  push:
+    branches: [master, web]
+    paths:
+      - "HarmonicSeries/**"
+      - "include/**"
+      - "Makefile"
+      - ".github/workflows/cpp.yml"
+  pull_request:
+    branches: [master, web]
+    paths:
+      - "HarmonicSeries/**"
+      - "include/**"
+      - "Makefile"
+      - ".github/workflows/cpp.yml"
+
+jobs:
+  build-and-validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install build tools
+        run: sudo apt-get update && sudo apt-get install -y g++ make
+      - name: Build CPU binary
+        run: make CUDA=0
+      - name: Validate-range smoke
+        run: ./harmonic_series --validate-range 100000 --quiet
+      - name: Estimate smoke
+        run: ./harmonic_series --backend estimate --target 40 --format json
