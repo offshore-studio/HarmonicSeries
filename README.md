@@ -2,6 +2,8 @@
 
 **Repository:** [github.com/offshore-studio/HarmonicSeries](https://github.com/offshore-studio/HarmonicSeries)
 
+**Live site:** [https://offshore.studio/harmonic-series/](https://offshore.studio/harmonic-series/)
+
 Numerical experiment for computing large partial sums of the harmonic series:
 
 \[
