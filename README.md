@@ -1,6 +1,6 @@
 # HarmonicSeries
 
-**Repository:** [github.com/ivanmiskic/HarmonicSeries](https://github.com/ivanmiskic/HarmonicSeries)
+**Repository:** [github.com/offshore-studio/HarmonicSeries](https://github.com/offshore-studio/HarmonicSeries)
 
 Numerical experiment for computing large partial sums of the harmonic series:
 
@@ -10,7 +10,7 @@ H_n = \sum_{k=1}^{n}\frac{1}{k}
 
 The project uses compensated summation (partial-sum expansion + Kahan reduction) for better floating-point stability than a naive `double` loop. It supports **CPU multithreading**, **CUDA (one GPU thread per chunk)**, and an **Euler–Maclaurin estimator** for the sum-40 target index.
 
-![Result sample](https://github.com/ivanmiskic/HarmonicSeries/blob/master/See%20it%20in%20action/25.png)
+![Result sample](https://github.com/offshore-studio/HarmonicSeries/blob/master/See%20it%20in%20action/25.png)
 
 ## Why this project exists
 
@@ -34,21 +34,28 @@ So this repository is:
 | `HarmonicSeries/harmonic_cuda.cu` | CUDA backend (one thread per chunk) |
 | `HarmonicSeries/harmonic_estimator.cpp` | Euler–Maclaurin `n` for target sum |
 | `HarmonicSeries/main.cpp` | CLI and backend dispatch |
-| `HarmonicSeries/harmonic_distributed.cpp` | Multi-node CUDA (CLI; web lab on `web` branch) |
+| `HarmonicSeries/harmonic_distributed.cpp` | Multi-node CUDA (CLI + dashboard rank launcher) |
 
 See also:
 
 - `docs/project-review-and-sum40-plan.md` — review and roadmap
 - `docs/gpu-cuda.md` — CUDA design and archived experiment notes
+- `web/README.md` — dark web dashboard (homepage + lab console)
 
 ## Web dashboard
 
-Homepage, lab UI, and production static site live on the **[`web` branch](https://github.com/ivanmiskic/HarmonicSeries/tree/web)**.
+Local-first dark UI for running benchmarks, live monitoring, GPU/cluster cost estimates, and a project explainer homepage.
 
-- **Live demo:** [offshore.studio/harmonic-series/](https://offshore.studio/harmonic-series/)
-- **Setup & deploy:** [web/README.md](https://github.com/ivanmiskic/HarmonicSeries/blob/web/web/README.md) on the `web` branch
+```bash
+make CUDA=1
+cd web/api && python -m venv .venv && .venv/bin/pip install -r requirements.txt
+HARMONIC_BIN=../../harmonic_series .venv/bin/uvicorn main:app --port 8001 &
+cd .. && cp .env.example .env.local && npm install && npm run dev
+```
 
-JSON CLI flags used by the lab API:
+Open http://localhost:3000 (homepage) and http://localhost:3000/dashboard (lab).
+
+New CLI flags for API integration:
 
 ```bash
 ./harmonic_series --format json --backend estimate --target 40
@@ -145,4 +152,4 @@ See `docs/distributed-two-machines.md` and `scripts/distributed_run.sh`.
 
 The project reports stable behavior at very large iteration counts when using compensated summation.
 
-![Accuracy sample](https://github.com/ivanmiskic/HarmonicSeries/blob/master/See%20it%20in%20action/Accuracy%20Sum%2029%20updated.png)
+![Accuracy sample](https://github.com/offshore-studio/HarmonicSeries/blob/master/See%20it%20in%20action/Accuracy%20Sum%2029%20updated.png)
