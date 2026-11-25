@@ -1,4 +1,4 @@
-**Repository:** [github.com/ivanmiskic/HarmonicSeries](https://github.com/ivanmiskic/HarmonicSeries) — **`web` branch**
+**Repository:** [github.com/offshore-studio/HarmonicSeries](https://github.com/offshore-studio/HarmonicSeries) — **`web` branch**
 
 Dark glass UI for running and monitoring harmonic series benchmarks.
 
@@ -29,7 +29,7 @@ git push origin web
 **Clone web only:**
 
 ```bash
-git clone -b web https://github.com/ivanmiskic/HarmonicSeries.git
+git clone -b web https://github.com/offshore-studio/HarmonicSeries.git
 ```
 
 ## Production deploy

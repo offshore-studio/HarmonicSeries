@@ -1,6 +1,6 @@
 # HarmonicSeries
 
-**Repository:** [github.com/ivanmiskic/HarmonicSeries](https://github.com/ivanmiskic/HarmonicSeries)
+**Repository:** [github.com/offshore-studio/HarmonicSeries](https://github.com/offshore-studio/HarmonicSeries)
 
 Numerical experiment for computing large partial sums of the harmonic series:
 
@@ -10,7 +10,7 @@ H_n = \sum_{k=1}^{n}\frac{1}{k}
 
 The project uses compensated summation (partial-sum expansion + Kahan reduction) for better floating-point stability than a naive `double` loop. It supports **CPU multithreading**, **CUDA (one GPU thread per chunk)**, and an **Euler–Maclaurin estimator** for the sum-40 target index.
 
-![Result sample](https://github.com/ivanmiskic/HarmonicSeries/blob/master/See%20it%20in%20action/25.png)
+![Result sample](https://github.com/offshore-studio/HarmonicSeries/blob/master/See%20it%20in%20action/25.png)
 
 ## Why this project exists
 
@@ -152,4 +152,4 @@ See `docs/distributed-two-machines.md` and `scripts/distributed_run.sh`.
 
 The project reports stable behavior at very large iteration counts when using compensated summation.
 
-![Accuracy sample](https://github.com/ivanmiskic/HarmonicSeries/blob/master/See%20it%20in%20action/Accuracy%20Sum%2029%20updated.png)
+![Accuracy sample](https://github.com/offshore-studio/HarmonicSeries/blob/master/See%20it%20in%20action/Accuracy%20Sum%2029%20updated.png)

@@ -1,1 +1,1 @@
-export const GITHUB_REPO_URL = "https://github.com/ivanmiskic/HarmonicSeries";
+export const GITHUB_REPO_URL = "https://github.com/offshore-studio/HarmonicSeries";
