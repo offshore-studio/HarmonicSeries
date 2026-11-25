@@ -2,7 +2,7 @@
 
 Dark glass UI for running and monitoring harmonic series benchmarks.
 
-**Live (presentation mode):** [offshore.studio/harmonic-series/](https://offshore.studio/harmonic-series/)
+**Live site:** [https://offshore.studio/harmonic-series/](https://offshore.studio/harmonic-series/)
 
 The C++ engine lives on the **`master`** branch. Website and lab work happen on **`web`**.
 
@@ -33,6 +33,8 @@ git clone -b web https://github.com/offshore-studio/HarmonicSeries.git
 ```
 
 ## Production deploy
+
+Live after deploy: [https://offshore.studio/harmonic-series/](https://offshore.studio/harmonic-series/)
 
 Static export (no FastAPI on the server):
 
